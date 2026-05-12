@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cecilia's Global Nomad | Memory Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,500&family=Inter:wght@300;400&display=swap');
+        
+        :root { --bg-color: #F9F8F3; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: #333;}
+        h1 { font-family: 'Playfair Display', serif; }
+
+        #map { height: 80vh; width: 100%; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05); }
+
+        .dot-marker {
+            width: 14px; height: 14px; background: #333; border: 3px solid #fff;
+            border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.15);
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(249, 248, 243, 0.95) !important;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+            width: 480px !important;
+            border-radius: 15px !important;
+        }
+        .leaflet-popup-content {
+            margin: 0 !important;
+            width: 100% !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .card-container {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            overflow: visible;
+        }
+        .bounce-card {
+            position: absolute;
+            left: 50%;
+            width: 150px;
+            height: 200px;
+            background: white;
+            border: 6px solid white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            object-fit: cover;
+            overflow: hidden;
+            transform-origin: center bottom;
+        }
+    </style>
+</head>
+<body class="p-6 md:px-24 lg:px-32">
+
+    <header class="mb-8 flex justify-between items-end">
+        <div>
+            <h1 class="text-5xl italic mb-3">Memory Map</h1>
+            <p class="text-[10px] tracking-[0.3em] text-gray-400 uppercase">Footprints / Portfolio</p>
+        </div>
+        <div class="text-right text-[10px] text-gray-400 leading-relaxed uppercase tracking-tighter">
+            2024-2026 Digital Archive <br> UBC & CBS Exchange
+        </div>
+    </header>
+
+    <div id="map" class="shadow-sm"></div>
+
+    <div class="mt-4 px-1 pb-20 flex justify-between items-center text-[11px] tracking-[0.2em] text-gray-400 uppercase">
+        <span class="opacity-80">地图上每一道短暂的光阴</span>
+        <span class="font-medium">@Cecilia</span>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map', { zoomControl: false }).setView([30, 10], 3);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        // --- 配置区 ---
+        const USERNAME = "m00nowhere"; 
+        const REPO = "memory-map";
+        const getImgUrl = (city, index) => `https://${USERNAME}.github.io/${REPO}/images/${city}/${index}.jpg`;
+
+        const locations = [
+            { id: 'cbs', name: "Copenhagen", coords: [55.6761, 12.5683], desc: "hygge" },
+            { id: 'ubc', name: "Vancouver", coords: [49.2606, -123.2460], desc: "tiny pieces" },
+            { id: 'sz', name: "Shenzhen", coords: [22.5431, 114.0579], desc: "exist" },
+            { id: 'tp', name: "Taipei", coords: [25.0330, 121.5654], desc: "潮湿的记忆都被困在" },
+            { id: 'hz', name: "Hangzhou", coords: [30.2741, 120.1551], desc: "曾湿西湖雨" },
+            { id: 'paris', name: "Paris", coords: [48.8566, 2.3522], desc: "流动的盛宴" },
+            { id: 'rome', name: "Rome", coords: [41.9028, 12.4964], desc: "片刻永恒" },
+            { id: 'reyk', name: "Reykjavík", coords: [64.1265, -21.8174], desc: "Fly Me to the Moon" },
+            { id: 'lofoten', name: "Lofoten", coords: [68.1214, 13.6489], desc: "我在濃霧頂端的玻璃窗" },
+            { id: 'lafortuna', name: "La Fortuna", coords: [10.4709, -84.6453], desc: "Welcome to the Jungle" },
+            { id: 'sapporo', name: "Sapporo", coords: [43.0618, 141.3545], desc: "First Love" },
+            { id: 'banff', name: "Banff", coords: [51.1784, -115.5708], desc: "真心半解" },
+            { id: 'beijing', name: "Beijing", coords: [39.9042, 116.4074], desc: "现在就是永远" },
+            { id: 'amsterdam', name: "Amsterdam", coords: [52.3676, 4.9041], desc: "深秋/运河/梵高" },
+            { id: 'mexicocity', name: "Mexico City", coords: [19.4326, -99.1332], desc: "二月的蓝花楹" }
+        ];
+
+        locations.forEach(loc => {
+            const icon = L.divIcon({ className: 'dot-marker' });
+            const marker = L.marker(loc.coords, { icon }).addTo(map);
+
+            const popupHTML = `
+                <div class="w-full">
+                    <h3 class="italic text-2xl font-serif text-gray-800 text-center">${loc.name}</h3>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mt-2 mb-4 text-center">${loc.desc}</p>
+                    <div id="cards-${loc.id}" class="card-container">
+                        ${[1,2,3,4].map(i => `<img src="${getImgUrl(loc.id, i)}" class="bounce-card" onerror="this.src='https://picsum.photos/400/533?grayscale'">`).join('')}
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupHTML, { offset: [0, -10] });
+
+            marker.on('popupopen', () => {
+                const cards = document.querySelectorAll(`#cards-${loc.id} .bounce-card`);
+                const transforms = [
+                    { x: -120, r: 8, y: 10 }, 
+                    { x: -40,  r: -3, y: 0  }, 
+                    { x: 40,   r: 3,  y: 0  }, 
+                    { x: 120,  r: -8, y: 10 }
+                ];
+
+                gsap.fromTo(cards, 
+                    { x: 0, xPercent: -50, y: 50, rotation: 0, opacity: 0 },
+                    { 
+                        x: (i) => transforms[i].x, 
+                        xPercent: -50,
+                        y: (i) => transforms[i].y, 
+                        rotation: (i) => transforms[i].r, 
+                        opacity: 1,
+                        duration: 1.2, 
+                        stagger: 0.1,
+                        ease: "elastic.out(1, 0.7)" 
+                    }
+                );
+            });
+        });
+    </script>
+</body>
+</html>
