@@ -32,6 +32,8 @@
             background: linear-gradient(135deg, #ffffff 0%, #a2a8b3 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            line-height: 1.25; 
+            margin-bottom: 0.5rem;
         }
 
         /* 粒子背景 Layer */
@@ -67,11 +69,17 @@
             mix-blend-mode: lighten;
         }
 
-        /* 同心圓呼吸燈 Marker */
+        /* 修正點：同心圓呼吸燈 Marker 改進其中心點定位基準 */
         .dot-marker {
-            width: 12px; height: 12px; background: #fff; border-radius: 50%;
+            width: 12px; 
+            height: 12px; 
+            background: #fff; 
+            border-radius: 50%;
             box-shadow: 0 0 8px var(--cyan-glow);
-            position: relative;
+            position: absolute;
+            /* 核心修正：確保自定義圓點的中心精確落在經緯度坐標上 */
+            transform: translate(-50%, -50%);
+            margin: 0 !important;
         }
         .dot-marker::after {
             content: '';
@@ -96,7 +104,6 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(0, 200, 255, 0.05) !important;
             width: 460px !important;
             border-radius: 0px !important;
-            /* 科技感不規則切角 */
             clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
         }
         .leaflet-popup-tip {
@@ -121,7 +128,7 @@
             margin-top: 25px;
             display: flex;
             justify-content: center;
-            perspective: 1000px; /* 激活 3D 空間 */
+            perspective: 1000px;
         }
         .bounce-card {
             position: absolute;
@@ -138,7 +145,6 @@
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.4s, box-shadow 0.4s;
             cursor: pointer;
         }
-        /* 滑鼠懸停 3D 校正與浮起 */
         .bounce-card:hover {
             transform: translate(-50%, -15px) scale(1.15) rotate(0deg) !important;
             z-index: 100 !important;
@@ -192,7 +198,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // --- 初始化地圖 (採用 Dark Matter 深色底圖) ---
+        // --- 初始化地圖 ---
         const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([30, 10], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
@@ -220,7 +226,11 @@
         ];
 
         locations.forEach(loc => {
-            const icon = L.divIcon({ className: 'dot-marker' });
+            // 核心修正：為自定義 divIcon 顯式設定其寬高尺寸 [12, 12]，便於 Leaflet 自動計算定位錨點
+            const icon = L.divIcon({ 
+                className: 'dot-marker',
+                iconSize: [12, 12]
+            });
             const marker = L.marker(loc.coords, { icon }).addTo(map);
 
             const popupHTML = `
@@ -233,12 +243,12 @@
                 </div>
             `;
 
-            marker.bindPopup(popupHTML, { offset: [0, -5], closeButton: false });
+            // 調整彈窗偏移行為
+            marker.bindPopup(popupHTML, { offset: [0, -6], closeButton: false });
 
             marker.on('popupopen', () => {
                 const cards = document.querySelectorAll(`#cards-${loc.id} .bounce-card`);
                 
-                // 升級為帶有輕微 z 軸位移的 3D 扇形展開
                 const transforms = [
                     { x: -115, r: 9,  y: 12, z: -20 }, 
                     { x: -40,  r: -3, y: 2,  z: 0   }, 
@@ -261,7 +271,6 @@
                     }
                 );
 
-                // 為開啟的彈窗邊緣隨機觸發一小段 Glitch 閃爍效果
                 const wrapper = document.querySelector('.leaflet-popup-content-wrapper');
                 if(wrapper) {
                     wrapper.classList.add('glitch-trigger');
@@ -288,7 +297,7 @@
                 this.y = Math.random() * canvas.height;
                 this.size = Math.random() * 1.2 + 0.5;
                 this.speedX = (Math.random() - 0.5) * 0.25;
-                this.speedY = -Math.random() * 0.3 - 0.1; // 緩慢向上漂浮
+                this.speedY = -Math.random() * 0.3 - 0.1;
                 this.alpha = Math.random() * 0.5 + 0.1;
             }
             update() {
